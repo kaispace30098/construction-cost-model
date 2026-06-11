@@ -3,12 +3,12 @@ import os
 import tempfile
 
 import mlflow
-import mlflow.xgboost
+import mlflow.sklearn
 import numpy as np
 import pandas as pd
 from mlflow.models.signature import infer_signature
+from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from xgboost import XGBRegressor
 
 from preprocess import FEATURES, TARGET, load_and_split
 
@@ -20,10 +20,8 @@ TRACKING_URI = os.environ.get("MLFLOW_TRACKING_URI", f"file:///{_ROOT}/mlruns")
 
 PARAMS = {
     "n_estimators": 300,
-    "max_depth": 6,
+    "max_depth": 4,
     "learning_rate": 0.05,
-    "subsample": 0.8,
-    "colsample_bytree": 0.8,
     "random_state": 42,
 }
 
@@ -42,13 +40,9 @@ def train():
         mlflow.log_param("data_version", data_hash)
         mlflow.log_params(PARAMS)
 
-        # ── training (val set for XGBoost early-stop monitoring) ──────────
-        model = XGBRegressor(**PARAMS)
-        model.fit(
-            X_train, y_train,
-            eval_set=[(X_val, y_val)],
-            verbose=False,
-        )
+        # ── training ──────────────────────────────────────────────────────
+        model = GradientBoostingRegressor(**PARAMS)
+        model.fit(X_train, y_train)
 
         # ── metrics on holdout (unbiased, never seen during training) ─────
         y_pred = model.predict(X_holdout)
@@ -69,7 +63,7 @@ def train():
 
         # ── log model ─────────────────────────────────────────────────────
         signature  = infer_signature(X_train, model.predict(X_train))
-        model_info = mlflow.xgboost.log_model(
+        model_info = mlflow.sklearn.log_model(
             model,
             artifact_path="model",
             signature=signature,

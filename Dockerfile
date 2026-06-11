@@ -2,9 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install serving dependencies
-COPY requirements-serve.txt .
-RUN pip install --no-cache-dir -r requirements-serve.txt
+# requirements.txt  → model lib (scikit-learn)
+# requirements-serve.txt → serving framework (fastapi, uvicorn)
+COPY requirements.txt requirements-serve.txt ./
+RUN pip install --no-cache-dir -r requirements.txt -r requirements-serve.txt
 
 # Copy FastAPI app
 COPY serving/ serving/

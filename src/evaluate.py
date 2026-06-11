@@ -2,7 +2,6 @@ import os
 import sys
 
 import mlflow
-import mlflow.xgboost
 import numpy as np
 from mlflow import MlflowClient
 from sklearn.metrics import mean_squared_error
@@ -69,7 +68,7 @@ def main():
     challenger_uri = f"runs:/{latest_run.info.run_id}/model"
     print(f"Challenger run ID : {latest_run.info.run_id}")
 
-    challenger_model = mlflow.xgboost.load_model(challenger_uri)
+    challenger_model = mlflow.pyfunc.load_model(challenger_uri)
     challenger_rmse = compute_rmse(challenger_model, X_holdout, y_holdout)
     print(f"Challenger RMSE   : {challenger_rmse:.2f}")
 
@@ -83,7 +82,7 @@ def main():
 
     # Compare challenger vs champion on same holdout
     champion_uri = f"models:/{MODEL_NAME}@{CHAMPION_ALIAS}"
-    champion_model = mlflow.xgboost.load_model(champion_uri)
+    champion_model = mlflow.pyfunc.load_model(champion_uri)
     champion_rmse = compute_rmse(champion_model, X_holdout, y_holdout)
 
     improvement = (champion_rmse - challenger_rmse) / champion_rmse
